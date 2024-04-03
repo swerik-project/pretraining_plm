@@ -26,9 +26,9 @@ Evaluation of the model :
 
 Intro classification<br />
 Speech/not Speech  classification<br />
-Speaker party detection__
-Speaker gender detection__
-Header/ non Header prediction__
+Speaker party detection<br />
+Speaker gender detection<br />
+Header/ non Header prediction<br />
 **perplexity/perplexity ish**
 
 
