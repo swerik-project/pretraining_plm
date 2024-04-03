@@ -24,8 +24,8 @@ Drawback : an increased time and cost investment with no guarantee of better res
 
 Evaluation of the model : 
 
-Intro classification__
-Speech/not Speech  classification__
+Intro classification<br />
+Speech/not Speech  classification<br />
 Speaker party detection__
 Speaker gender detection__
 Header/ non Header prediction__
