@@ -1,4 +1,4 @@
-# pPre-training a BERT Transformer Neural Network for Swedish political discourse
+#Pre-training a BERT Transformer Neural Network for Swedish political discourse
 
 
 **The problem** :  The objective of this project is to train a dedicated BERT model tailored to the Swedish parliamentary corpus. The issue is that existing BERT models both lack vocabulary from the 19th century and are trained on a more general corpus, thereby restricting the scope of analysis for such a historical corpus and the performance on political data.
