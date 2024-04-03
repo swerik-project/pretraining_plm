@@ -24,11 +24,11 @@ Drawback : an increased time and cost investment with no guarantee of better res
 
 Evaluation of the model : 
 
-Intro classification /n
-Speech/not Speech  classification/n
-Speaker party detection
-Speaker gender detection
-Header/ non Header prediction 
+Intro classification__
+Speech/not Speech  classification__
+Speaker party detection__
+Speaker gender detection__
+Header/ non Header prediction__
 **perplexity/perplexity ish**
 
 
