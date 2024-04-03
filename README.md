@@ -6,11 +6,11 @@ Objective : Train a BERT model specifically for Swedish political discourse over
 
 **Proposition of Models** : 
 
-Continue Pre-training using KB-bert on the swedish corpus :
+Continue Pre-training using KB-bert on the swedish corpus :</ins>
 
 Description : we can start from the KB-Bert specialized in the Swedish language and then use a Domain-Adaptive Pretraining on the Swedish corpus in order to improve the model for the political settings
 
-Using exBert/ VART  to extend the model with domain specific vocabulary :
+Using exBert/ VART  to extend the model with domain specific vocabulary :</ins>
 
 Description : The particularity of exBert lies in its combination of a from-scratch training model and a fine-tuning approach. It integrates an additional extension vocabulary into the Bert model's structure by increasing the embedding layer, specifically dedicated to domain-specific vocabulary through WordPiece. Additionally, it incorporates a module extension into each transformer layer. The author initially applied this model in the biomedical field; there is potential for experimentation with the same architecture in the context of the Swedish Parliament. There is also a recent adaptation of exBERT called VART which boost the efficiency in both pre-training and fine-tuning phases while saving computational resources. 
 
@@ -22,7 +22,7 @@ Drawback : an increased time and cost investment with no guarantee of better res
 
 
 
-Evaluation of the model : 
+**Evaluation of the model :**
 
 Intro classification<br />
 Speech/not Speech  classification<br />
