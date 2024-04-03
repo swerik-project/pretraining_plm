@@ -6,7 +6,7 @@ Objective : Train a BERT model specifically for Swedish political discourse over
 
 **Proposition of Models** : 
 
-Continue Pre-training using KB-bert on the swedish corpus :</ins>
+<ins>Continue Pre-training using KB-bert on the swedish corpus :</ins>
 
 Description : we can start from the KB-Bert specialized in the Swedish language and then use a Domain-Adaptive Pretraining on the Swedish corpus in order to improve the model for the political settings
 
