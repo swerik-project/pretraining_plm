@@ -3,16 +3,20 @@ from transformers import TrainingArguments
 import math
 import torch
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def evaluation_task(model,dataloader):
 
-    print("Trainer evaluation....")
-    logging_steps = 500
+def trainer_evaluation(model,dataloader):  
+    logging_steps =892
 
     training_args = TrainingArguments(
         output_dir=f"{model.config.name_or_path}-finetuned-imdb",
         per_device_eval_batch_size=64,
-        logging_steps=logging_steps,)
+        logging_steps=logging_steps,
+        evaluation_strategy="epoch",
+        learning_rate=2e-5,
+        weight_decay=0.01,
+        )
 
 
     trainer = Trainer(
@@ -20,15 +24,21 @@ def evaluation_task(model,dataloader):
         args=training_args,
         eval_dataset=dataloader.dataset
     )
-    eval_results = trainer.evaluate()
+    return(trainer.evaluate())
+ 
+
+def evaluation_task(model,dataloader):
+    print("Trainer evaluation....")
+    eval_results = trainer_evaluation(model,dataloader)
     print(f">>> Perplexity: {math.exp(eval_results['eval_loss']):.2f}")
 
     model.eval()
-    model=model.to("cpu")
+    model=model.to(device)
     losses=[]
     correct_predictions=0
     total_predictions=0
     for step, batch in enumerate(dataloader):
+        batch={key: value.to(device) for key, value in batch.items()}
         with torch.no_grad():
             outputs = model(**batch)
         indices_tokens_masked = torch.nonzero(batch["labels"] != -100, as_tuple=False)
