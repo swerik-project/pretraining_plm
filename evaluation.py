@@ -10,6 +10,7 @@ def evaluation_task(model,dataloader):
     logging_steps = 500
 
     training_args = TrainingArguments(
+        output_dir=f"{model.config.name_or_path}-finetuned-imdb",
         per_device_eval_batch_size=64,
         logging_steps=logging_steps,)
 
@@ -28,6 +29,8 @@ def evaluation_task(model,dataloader):
     losses=[]
     for step, batch in enumerate(dataloader):
         with torch.no_grad():
+            print(model.device)
+            print(batch["input_ids"].device)
             outputs = model(**batch)
 
         loss = outputs.loss
