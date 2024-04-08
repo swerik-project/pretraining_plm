@@ -59,7 +59,11 @@ def data_collector_masking(tokenizer,mlm_proba):
 def create_trainer(model,model_name,batch_size,logging_steps,learning_rate=2e-5,decay=0.01,train_dataset=None,eval_dataset=None,data_collator=None,tokenizer=None,push_hub=False,num_epochs=None):
     training_args = TrainingArguments(
     output_dir=f"{model_name}-finetuned-imdb",
+    resume_from_checkpoint=True,
     overwrite_output_dir=True,
+    save_strategy="epoch",
+    save_total_limit=5,
+    load_best_model_at_end=True,
     evaluation_strategy="epoch",
     learning_rate=learning_rate,
     weight_decay=decay,
