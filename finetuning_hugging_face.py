@@ -18,7 +18,7 @@ def main(args):
 
 
     model_checkpoint = args.model_filename
-    model = preprocessing.create_model_MLM(model_checkpoint)
+    model = preprocessing.create_model_MLM(args.model_checkpoint)
     tokenizer =preprocessing.create_tokenizer(model_checkpoint)
 
     #data_files = {"train": "swerick_data_long_train.pkl", "test": "swerick_data_long_test.pkl"}
@@ -33,7 +33,7 @@ def main(args):
     logging_steps = len(lm_datasets["train"]) // batch_size
 
     trainer = preprocessing.create_trainer(model,model_name,batch_size,logging_steps,train_dataset=lm_datasets["train"],eval_dataset=lm_datasets["test"],data_collator=data_collator,tokenizer=tokenizer,num_epochs=num_epochs)
-    trainer.train()
+    trainer.train(resume_from_checkpoint= args.checkpoint_trainer)
     model.save_pretrained("finetuning_trainer_total1")
     tokenizer.save_pretrained("finetuning_trainer_total1")
 
@@ -58,6 +58,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model_filename", type=str, default="KBLab/bert-base-swedish-cased", help="Save location for the model")
+    parser.add_argument("--model_checkpoint", type=str, default="KBLab/bert-base-swedish-cased", help="Save location for checkpoint of the trainer")
+    parser.add_argument("--checkpoint_trainer", type=str, default=None, help="Save location for checkpoint of the trainer")
     parser.add_argument("--name", type=str, default="finetuning_hugging_python", help="repository name")
     parser.add_argument("--chunk_size", type=int, default=128)
     parser.add_argument("--batch_size", type=int, default=64)
