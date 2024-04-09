@@ -6,11 +6,12 @@ import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+
 def trainer_evaluation(model,dataloader):  
     logging_steps =892
 
     training_args = TrainingArguments(
-        output_dir=f"{model.config.name_or_path}-finetuned-imdb",
+        output_dir=f"{model.config.name_or_path}-imdb",
         per_device_eval_batch_size=64,
         logging_steps=logging_steps,
         evaluation_strategy="epoch",
@@ -20,7 +21,7 @@ def trainer_evaluation(model,dataloader):
 
 
     trainer = Trainer(
-        model=model,
+        model=model.to(device),
         args=training_args,
         eval_dataset=dataloader.dataset
     )
