@@ -46,7 +46,7 @@ def create_tokenizer(model_checkpoint):
 def tokenize_dataset(dataset,tokenizer):
 
     return dataset.map(
-      lambda examples: tokenize_function(examples, tokenizer), batched=True, remove_columns=["texte", "protocole",'__index_level_0__']
+      lambda examples: tokenize_function(examples, tokenizer), batched=True, remove_columns=["texte", "protocole"]
 )
 
 
@@ -62,7 +62,7 @@ def create_trainer(model,model_name,batch_size,logging_steps,learning_rate=2e-5,
     resume_from_checkpoint=True,
     overwrite_output_dir=True,
     save_strategy="epoch",
-    save_total_limit=5,
+    save_total_limit=100,
     load_best_model_at_end=True,
     evaluation_strategy="epoch",
     learning_rate=learning_rate,
