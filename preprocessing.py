@@ -47,7 +47,7 @@ def create_tokenizer(model_checkpoint):
 def tokenize_dataset(dataset,tokenizer):
 
     return dataset.map(
-      lambda examples: tokenize_function(examples, tokenizer), batched=True, remove_columns=["texte", "protocole"]
+      lambda examples: tokenize_function(examples, tokenizer), batched=True, remove_columns=["texte","protocole"]
 )
 
 
@@ -59,28 +59,8 @@ def data_collector_masking(tokenizer,mlm_proba):
 
 def compute_metrics(eval_preds):
     
-    losses=[]
-    correct_predictions=0
-    total_predictions=0
-    print(eval_preds)
-    for step, batch in enumerate(eval_preds):
-        batch={key: value.to(device) for key, value in batch.items()}
-        indices_tokens_masked = torch.nonzero(batch["labels"] != -100, as_tuple=False)
-        loss = batch.loss
-        losses.append(loss.repeat(64))
-        predicted_token_ids = torch.argmax(batch.logits, dim=-1)
-        correct_predictions += torch.sum(
-            torch.eq(batch["labels"][indices_tokens_masked[:, 0], indices_tokens_masked[:, 1]], 
-                    predicted_token_ids[indices_tokens_masked[:, 0], indices_tokens_masked[:, 1]])
-        ).item()
-        total_predictions += indices_tokens_masked.size(0)
-    losses = torch.cat(losses)
-    losses = losses[: len(eval_preds)]
-    try:
-        perplexity = math.exp(torch.mean(losses))
-    except OverflowError:
-       perplexity = float("inf")
-    accuracy = correct_predictions / total_predictions
+    perplexity=0.1
+    accuracy=0.3
     return {"Perplexity:": perplexity,"Accuracy :" : accuracy}
 
 def create_trainer(model,model_name,batch_size,logging_steps,learning_rate=2e-5,decay=0.01,train_dataset=None,eval_dataset=None,data_collator=None,tokenizer=None,push_hub=False,num_epochs=None):
@@ -104,13 +84,13 @@ def create_trainer(model,model_name,batch_size,logging_steps,learning_rate=2e-5,
 )
     
     return  Trainer(
-    model=model.to("cpu"),
+    model=model,
     args=training_args,
     train_dataset=train_dataset,
     eval_dataset=eval_dataset,
     data_collator=data_collator,
-    tokenizer=tokenizer,
-    compute_metrics=compute_metrics
+    tokenizer=tokenizer
+   # compute_metrics=compute_metrics
 )
 
 def create_deterministic_eval_dataset(dataset,data_collator):
