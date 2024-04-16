@@ -16,7 +16,7 @@ def trainer_evaluation(model,dataloader):
         logging_steps=logging_steps,
         evaluation_strategy="epoch",
         learning_rate=2e-5,
-        weight_decay=0.01,
+        weight_decay=0.01
         )
 
 
@@ -26,12 +26,17 @@ def trainer_evaluation(model,dataloader):
         eval_dataset=dataloader.dataset
     )
     return(trainer.evaluate())
- 
+
+
+
+
 
 def evaluation_task(model,dataloader):
     print("Trainer evaluation....")
     eval_results = trainer_evaluation(model,dataloader)
-    print(f">>> Perplexity: {math.exp(eval_results['eval_loss']):.2f}")
+    print(eval_results)
+    loss=next(iter(eval_results))
+    print(f">>> Perplexity: {math.exp(eval_results[loss]):.2f}")
 
     model.eval()
     model=model.to(device)
