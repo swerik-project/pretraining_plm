@@ -1,7 +1,10 @@
 from lxml import etree
 from pyparlaclarin.read import paragraph_iterator
 from pyriksdagen.utils import protocol_iterators
+from pyriksdagen.metadata import load_Corpus_metadata
 import numpy as np
+from bs4 import BeautifulSoup
+import re
 
 # We need a parser for reading in XML data
 parser = etree.XMLParser(remove_blank_text=True)
@@ -73,11 +76,61 @@ def create_deterministic_swerick_data(subset):
     for i in range(len(protocols)):
         protocol_in_question = protocols[i]
         root = etree.parse(protocol_in_question, parser).getroot()
-        element_str=""
-        for elem in list(paragraph_iterator(root, output="lxml")):
-            element_str += " ".join(elem.itertext()).replace("\n","")
-            
-        data.append({"protocole": protocol_in_question,"texte": "".join(element_str.split())})
+        element_str=paragraph_iterator(root, output="str")
+
+        data.append({"protocole": protocol_in_question,"texte": " ".join(element_str)})
 
     df=pd.DataFrame(data)
+    return train_test_valid(df)
+
+def create_swerick_party_gender_data(subset):
+    protocols=get_protocols(subset)
+    metadata =load_Corpus_metadata()
+
+    notes=[]
+    id=[]
+    party=[]
+    gender=[]
+    protocol=[]
+
+    for i in range(len(protocols)):
+        protocol_in_question = protocols[i]
+        with open(protocol_in_question,"r") as f:
+            xml_content=f.read()
+            soup=BeautifulSoup(xml_content,"xml")
+            note_elements=soup.find_all("u")
+
+
+            for note in note_elements:
+                note_text = note.text.strip()
+                note_text = re.sub(r'\s+',' ',note_text)
+                note_text = re.sub(r'\n+',' ',note_text)
+                next_element = note.get("who")
+                if next_element != "unknown":
+                    id.append(next_element)
+                    notes.append(note_text)
+
+                    party_value = metadata.loc[next_element, "party"]
+                    if isinstance(party_value, pd.Series):
+                        party_values = party_value.dropna()
+                        if not party_values.empty:
+                            party.append(party_values.iloc[0])
+                        else:
+                            party.append(np.nan)
+                    else:
+                        party.append(party_value)
+
+                    gender_value = metadata.loc[next_element, "gender"]
+                    if isinstance(gender_value, pd.Series):
+                        gender_values = gender_value.dropna()
+                        if not gender_values.empty:
+                            gender.append(gender_values.iloc[0])
+                        else:
+                            gender.append(np.nan)
+                    else:
+                        gender.append(gender_value)
+
+                    protocol.append(protocol_in_question)
+
+    df = pd.DataFrame({"protocol": protocol, "Note": notes, "id": id, "party": party, "gender": gender})
     return train_test_valid(df)
