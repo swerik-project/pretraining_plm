@@ -2,6 +2,10 @@ from transformers import Trainer
 from transformers import TrainingArguments
 import math
 import torch
+import argparse
+from train_binary_bert import main as train_bert
+
+from compare_models import main as compare
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -31,45 +35,98 @@ def trainer_evaluation(model,dataloader):
 
 
 
-def evaluation_task(model,dataloader):
+def evaluation_task(model,dataloader,model_filename):
     print("Trainer evaluation....")
-    eval_results = trainer_evaluation(model,dataloader)
-    print(eval_results)
-    loss=next(iter(eval_results))
-    print(f">>> Perplexity: {math.exp(eval_results[loss]):.2f}")
+    #eval_results = trainer_evaluation(model,dataloader)
+    #print(eval_results)
+    #loss=next(iter(eval_results))
+    #print(f">>> Perplexity: {math.exp(eval_results[loss]):.2f}")
 
-    model.eval()
-    model=model.to(device)
-    losses=[]
-    correct_predictions=0
-    total_predictions=0
-    for step, batch in enumerate(dataloader):
-        batch={key: value.to(device) for key, value in batch.items()}
-        with torch.no_grad():
-            outputs = model(**batch)
-        indices_tokens_masked = torch.nonzero(batch["labels"] != -100, as_tuple=False)
-        loss = outputs.loss
-        losses.append(loss.repeat(dataloader.batch_size))
-        predicted_token_ids = torch.argmax(outputs.logits, dim=-1)
-        correct_predictions += torch.sum(
-            torch.eq(batch["labels"][indices_tokens_masked[:, 0], indices_tokens_masked[:, 1]], 
-                    predicted_token_ids[indices_tokens_masked[:, 0], indices_tokens_masked[:, 1]])
-        ).item()
-        total_predictions += indices_tokens_masked.size(0)
+    #model.eval()
+    #model=model.to(device)
+    #losses=[]
+    #correct_predictions=0
+    #total_predictions=0
+    #for step, batch in enumerate(dataloader):
+       # batch={key: value.to(device) for key, value in batch.items()}
+        #with torch.no_grad():
+           # outputs = model(**batch)
+       # indices_tokens_masked = torch.nonzero(batch["labels"] != -100, as_tuple=False)
+       # loss = outputs.loss
+       # losses.append(loss.repeat(dataloader.batch_size))
+        #predicted_token_ids = torch.argmax(outputs.logits, dim=-1)
+       # correct_predictions += torch.sum(
+          #  torch.eq(batch["labels"][indices_tokens_masked[:, 0], indices_tokens_masked[:, 1]], 
+              #      predicted_token_ids[indices_tokens_masked[:, 0], indices_tokens_masked[:, 1]])
+        #).item()
+        #total_predictions += indices_tokens_masked.size(0)
        
 
-    print("Manual perplexity...")
-    losses = torch.cat(losses)
-    losses = losses[: len(dataloader.dataset)]
-    try:
-        perplexity = math.exp(torch.mean(losses))
-    except OverflowError:
-       perplexity = float("inf")
-    print(f" Perplexity: {perplexity}")
+   # print("Manual perplexity...")
+   # losses = torch.cat(losses)
+   # losses = losses[: len(dataloader.dataset)]
+   # try:
+     #   perplexity = math.exp(torch.mean(losses))
+   # except OverflowError:
+   #    perplexity = float("inf")
+  #  print(f" Perplexity: {perplexity}")
 
 
-    print("Accuracy...")
+   # print("Accuracy...")
         
-    accuracy = correct_predictions / total_predictions
-    print("Accuracy:", accuracy)
+   # accuracy = correct_predictions / total_predictions
+    #print("Accuracy:", accuracy)
+
+
+    print("Party classification")
+    import subprocess
+    print("training")
+    # Define the command as a list of strings
+    import pickle
+    with open("labels.pkl","rb") as f :
+        label_names=pickle.load(f)
+
+    label_names_str = " ".join([f'"{name}"' for name in label_names.tolist()])
+    label_names_str = 'vänstern' 'Andra kammarens center''Andra kammarens frihandelsparti''Bondeförbundet''Centern (partigrupp 1873-1882)' 'Centern (partigrupp 1885-1887)' 'Centerpartiet', 'Det förenade högerpartiet' 'Ehrenheimska partiet' 'Folkpartiet' 'Folkpartiet (1895–1900)''Friesenska diskussionsklubben' 'Frihandelsvänliga centern' 'Frisinnade folkpartiet' 'Frisinnade försvarsvänner' 'Frisinnade landsföreningen' 'Första kammarens konservativa grupp', 'Första kammarens ministeriella grupp' 'Första kammarens minoritetsparti' 'Första kammarens moderata parti' 'Första kammarens nationella parti' 'Första kammarens protektionistiska parti''Gamla lantmannapartiet' 'Högerns riksdagsgrupp', 'Högerpartiet' 'Högerpartiet de konservativa' 'Jordbrukarnas fria grupp' 'Junkerpartiet' 'Kilbomspartiet' 'Kommunistiska partiet' 'Kristdemokraterna' 'Lantmanna- och borgarepartiet inom andrakammaren' 'Lantmannapartiet', 'Lantmannapartiets filial''Liberala riksdagspartiet' 'Liberala samlingspartiet' 'Liberalerna' 'Medborgerlig samling (1964–1968)' 'Miljöpartiet' 'Moderaterna' 'Nationella framstegspartiet' 'Ny demokrati', 'Nya centern (partigrupp 1883-1887)' 'Nya lantmannapartiet' 'Nyliberala partiet''Skånska partiet' 'Socialdemokraterna' 'Socialdemokratiska vänstergruppen' 'Socialistiska partiet' 'Stockholmsbänken' 'Sverigedemokraterna' 'Sveriges kommunistiska parti' 'Vänsterpartiet' 'borgmästarepartiet' 'frihandelsvänlig vilde' 'frisinnad vilde' 'högervilde' 'ministeriella partiet' 'partilös' 'politisk vilde' 'vänstervilde'
+    command = [
+    "python3",
+    "train_binary_bert.py",
+    "--model_filename",
+    "trained_hugging_face_party_classification",
+    "--base_model",
+    "finetuning_hugging_whitespace-finetuned-imdb/checkpoint-343500",
+    "--data_path",
+    "swerick_subsetdata_party_train.csv",
+    "--label_names",
+    '"vänstern" "Andra kammarens center" "Andra kammarens frihandelsparti" "Bondeförbundet" "Centern (partigrupp 1873-1882)" "Centern (partigrupp 1885-1887)" "Centerpartiet" "Det förenade högerpartiet" "Ehrenheimska partiet" "Folkpartiet" "Folkpartiet (1895–1900)" "Friesenska diskussionsklubben" "Frihandelsvänliga centern" "Frisinnade folkpartiet" "Frisinnade försvarsvänner" "Frisinnade landsföreningen" "Första kammarens konservativa grupp" "Första kammarens ministeriella grupp" "Första kammarens minoritetsparti" "Första kammarens moderata parti" "Första kammarens nationella parti" "Första kammarens protektionistiska parti" "Gamla lantmannapartiet" "Högerns riksdagsgrupp", "Högerpartiet" "Högerpartiet de konservativa" "Jordbrukarnas fria grupp" "Junkerpartiet" "Kilbomspartiet" "Kommunistiska partiet" "Kristdemokraterna" "Lantmanna- och borgarepartiet inom andrakammaren" "Lantmannapartiet", "Lantmannapartiets filial" "Liberala riksdagspartiet" "Liberala samlingspartiet" "Liberalerna" "Medborgerlig samling (1964–1968)" "Miljöpartiet" "Moderaterna" "Nationella framstegspartiet" "Ny demokrati", "Nya centern (partigrupp 1883-1887)" "Nya lantmannapartiet" "Nyliberala partiet" "Skånska partiet" "Socialdemokraterna" "Socialdemokratiska vänstergruppen" "Socialistiska partiet" "Stockholmsbänken" "Sverigedemokraterna" "Sveriges kommunistiska parti" "Vänsterpartiet" "borgmästarepartiet" "frihandelsvänlig vilde" "frisinnad vilde" "högervilde" "ministeriella partiet" "partilös" "politisk vilde" "vänstervilde"'
+    ]
+    # Run the command
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models.py",
+    "--model_filename1",
+    "trained_party_classification",
+    "--model_filename2",
+    "trained_hugging_face_party_classification" + model_filename[-6:],
+    "--data_path",
+    "swerick_subsetdata_party_test.csv",
+     "--label_names",
+    label_names_str
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
     
