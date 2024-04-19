@@ -193,7 +193,7 @@ def regression_year(model_filename):
     "--model_filename2",
     "trained/regression_date"+model_filename[:6],
     "--data_path",
-    "swerick_subsetdata_party_test.csv"
+    "swerick_subsetdata_date_test.csv"
     ]
     process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
