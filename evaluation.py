@@ -2,6 +2,11 @@ from transformers import Trainer
 from transformers import TrainingArguments
 import math
 import torch
+import subprocess
+
+from train_binary_bert import main as train_bert
+
+from compare_models import main as compare
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -31,12 +36,12 @@ def trainer_evaluation(model,dataloader):
 
 
 
-def evaluation_task(model,dataloader):
+def evaluation_task(model,dataloader,model_filename):
     print("Trainer evaluation....")
-    eval_results = trainer_evaluation(model,dataloader)
-    print(eval_results)
-    loss=next(iter(eval_results))
-    print(f">>> Perplexity: {math.exp(eval_results[loss]):.2f}")
+    #eval_results = trainer_evaluation(model,dataloader)
+    #print(eval_results)
+    #loss=next(iter(eval_results))
+    #print(f">>> Perplexity: {math.exp(eval_results[loss]):.2f}")
 
     model.eval()
     model=model.to(device)
@@ -62,14 +67,139 @@ def evaluation_task(model,dataloader):
     losses = torch.cat(losses)
     losses = losses[: len(dataloader.dataset)]
     try:
-        perplexity = math.exp(torch.mean(losses))
+       perplexity = math.exp(torch.mean(losses))
     except OverflowError:
        perplexity = float("inf")
     print(f" Perplexity: {perplexity}")
 
 
     print("Accuracy...")
-        
+   #     
     accuracy = correct_predictions / total_predictions
     print("Accuracy:", accuracy)
+
+
+def party_gender_detection(model_filename) :
+
+    print("Party classification")
+ 
+    print("training")
+    command = [
+    "python3",
+    "train_binary_bert.py",
+    "--model_filename",
+    "trained_party_classification",
+    "--data_path",
+    "swerick_subsetdata_party_train.csv",
+    "--label_names",
+    '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
+    #"man","woman"
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
     
+
+    command = [
+    "python3",
+    "train_binary_bert.py",
+    "--model_filename",
+    "trained_hugging_face_party_classification"+ model_filename[-6:],
+    "--base_model",
+    "finetuning_hugging_whitespace-finetuned-imdb/checkpoint-343500",
+    "--data_path",
+    "swerick_subsetdata_party_train.csv",
+    "--label_names",
+    '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
+    #"man","woman"
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models.py",
+    "--model_filename1",
+    "trained_party_classification",
+    "--model_filename2",
+    "trained_hugging_face_party_classification" + model_filename[-6:],
+    "--data_path",
+    "swerick_subsetdata_party_test.csv",
+    "--label_names",
+    #"man","woman"
+    '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+
+
+def regression_year(model_filename):
+    print("Year regression")
+
+    print("training")
+    command = [
+    "python3",
+    "train_regression.py"
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+
+    print("Party classification")
+
+    print("training hugging face")
+    command = [
+    "python3",
+    "train_regression.py",
+    "--model_filename",
+    "trained/regression_date"+model_filename[:6]
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models_regression.py",
+    "--model_filename2",
+    "trained/regression_date"+model_filename[:6],
+    "--data_path",
+    "swerick_subsetdata_date_test.csv"
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
