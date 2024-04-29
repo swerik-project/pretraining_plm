@@ -104,6 +104,8 @@ def main(args):
         batch_size=args.batch_size,
         num_workers=args.num_workers
     )
+
+    print("size test set", len(dataset))
     loss1,r21 = evaluate(model1, test_loader,args)
     loss2,r22=evaluate(model2,test_loader,args)
     print("\nLoss model 1:", loss1 * args.batch_size / len(test_loader))
@@ -112,6 +114,10 @@ def main(args):
     
     print("\nLoss model 2:", loss2* args.batch_size / len(test_loader))
     print("\nR2 model2:",torch.mean(torch.tensor(r22)))
+
+    with open("comparison_results.txt", "a") as file:
+        print(loss1 * args.batch_size / len(test_loader))
+        file.write(f"{loss1 * args.batch_size / len(test_loader)},{r21},{loss2 * args.batch_size / len(test_loader)},{r22}\n")
 
 
 

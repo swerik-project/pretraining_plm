@@ -36,10 +36,7 @@ def main(args):
     train_dataloader = preprocessing.create_dataloader(lm_dataset_bis["train"],args.batch_size,data_collator)
     eval_dataloader = preprocessing.create_dataloader(eval_dataset,args.batch_size,default_data_collator)
 
-    for batch in train_dataloader:
-        batch = to_device(batch)
-    for batch in eval_dataloader:
-        batch = to_device(batch)
+
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
 
@@ -122,8 +119,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model_checkpoint", type=str, default="KBLab/bert-base-swedish-cased", help="Save location for the model")
-    parser.add_argument("--train", type=str, default="swerick_data_long_train", help="train data str")
-    parser.add_argument("--test", type=str, default="swerick_data_long_test", help="test_data str")
+    parser.add_argument("--train", type=str, default="swerick_data_random_train", help="train data str")
+    parser.add_argument("--test", type=str, default="swerick_data_random_test", help="test_data str")
     parser.add_argument("--chunk_size", type=int, default=128)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--num_train_epochs", type=int, default=100)

@@ -111,7 +111,7 @@ def party_gender_detection(model_filename) :
     "--model_filename",
     "trained_hugging_face_party_classification"+ model_filename[-6:],
     "--base_model",
-    "finetuning_hugging_whitespace-finetuned-imdb/checkpoint-343500",
+    model_filename,
     "--data_path",
     "swerick_subsetdata_party_train.csv",
     "--label_names",
@@ -151,31 +151,20 @@ def party_gender_detection(model_filename) :
     print("stderr:", stderr.decode())
 
 
-def regression_year(model_filename):
+def regression_year(model_filename,data_path):
     print("Year regression")
 
     print("training")
     command = [
     "python3",
-    "train_regression.py"
-]
-
-    # Exécuter la commande
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-
-    # Print the output
-    print("stdout:", stdout.decode())
-    print("stderr:", stderr.decode())
-
-    print("Party classification")
-
-    print("training hugging face")
-    command = [
-    "python3",
     "train_regression.py",
-    "--model_filename",
-    "trained/regression_date"+model_filename[:6]
+    "--base_model2",
+    model_filename,
+    "--model_filename2",
+    "trained/regression_date"+model_filename[-6:],
+    "--data_path",
+    data_path
+
 ]
 
     # Exécuter la commande
@@ -185,13 +174,14 @@ def regression_year(model_filename):
     # Print the output
     print("stdout:", stdout.decode())
     print("stderr:", stderr.decode())
+
 
     print("comparing")
     command2= [
     "python3",
     "compare_models_regression.py",
     "--model_filename2",
-    "trained/regression_date"+model_filename[:6],
+    "trained/regression_date"+model_filename[-6:],
     "--data_path",
     "swerick_subsetdata_date_test.csv"
     ]

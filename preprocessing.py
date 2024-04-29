@@ -10,6 +10,7 @@ from transformers import Trainer
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def tokenize_function(examples,tokenizer):
+    print(examples["texte"])
     result = tokenizer(examples["texte"])
     if tokenizer.is_fast:
         result["word_ids"] = [result.word_ids(i) for i in range(len(result["input_ids"]))]
