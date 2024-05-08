@@ -4,9 +4,7 @@ import math
 import torch
 import subprocess
 
-from train_binary_bert import main as train_bert
 
-from compare_models import main as compare
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
