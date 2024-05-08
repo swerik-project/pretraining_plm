@@ -193,3 +193,66 @@ def regression_year(model_filename,data_path):
     # Print the output
     print("stdout:", stdout.decode())
     print("stderr:", stderr.decode())
+
+
+def intro_classifaction(model_filename):
+
+    print("intro classification")
+ 
+    print("training")
+    command = [
+    "python3",
+    "train_binary_bert.py",
+    "--model_filename",
+    "trained_intro_classification",
+    "--data_path",
+    "swerick_data_intro_train.csv"
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+
+    command = [
+    "python3",
+    "train_binary_bert.py",
+    "--model_filename",
+    "trained_hugging_face_intro_classification"+ model_filename[-6:],
+    "--base_model",
+    model_filename,
+    "--data_path",
+    "swerick_data_intro_train.csv"
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models.py",
+    "--model_filename1",
+    "trained_intro_classification",
+    "--model_filename2",
+    "trained_hugging_face_intro_classification" + model_filename[-6:],
+    "--data_path",
+    "swerick_data_intro_test.csv"
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
