@@ -193,6 +193,7 @@ def regression_year(model_filename,data_path):
     # Print the output
     print("stdout:", stdout.decode())
     print("stderr:", stderr.decode())
+<<<<<<< HEAD:evaluation.py
 
 
 def intro_classifaction(model_filename):
@@ -256,3 +257,5 @@ def intro_classifaction(model_filename):
     # Print the output
     print("stdout:", stdout.decode())
     print("stderr:", stderr.decode())
+=======
+>>>>>>> fa650b69c61bd7cd9e1fc58dff2358592babade2:evaluation/evaluation.py
