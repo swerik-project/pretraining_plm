@@ -10,7 +10,7 @@ from transformers import Trainer
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def tokenize_function(examples,tokenizer):
-    result = tokenizer(examples["texte"])
+    result = tokenizer(examples["content"])
     if tokenizer.is_fast:
         result["word_ids"] = [result.word_ids(i) for i in range(len(result["input_ids"]))]
     return result
@@ -31,7 +31,8 @@ def group_texts(examples,chunk_size):
     result["labels"] = result["input_ids"].copy()
     return result
 
-def insert_random_mask(batch,data_collator):
+def insert_random_mask(batch,data_collator,seed=42):
+    torch.manual_seed(seed)
     features = [dict(zip(batch, t)) for t in zip(*batch.values())]
     masked_inputs = data_collator(features)
     # Create a new "masked" column for each column in the dataset
@@ -47,7 +48,7 @@ def create_tokenizer(model_checkpoint):
 def tokenize_dataset(dataset,tokenizer):
 
     return dataset.map(
-      lambda examples: tokenize_function(examples, tokenizer), batched=True, remove_columns=["texte","protocole"]
+      lambda examples: tokenize_function(examples, tokenizer), batched=True, remove_columns=dataset.column_names
 )
 
 
