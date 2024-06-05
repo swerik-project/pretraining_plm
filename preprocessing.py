@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 from transformers import DataCollatorForLanguageModeling
 from transformers import TrainingArguments
 from transformers import Trainer
+import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -31,7 +32,8 @@ def group_texts(examples,chunk_size):
     result["labels"] = result["input_ids"].copy()
     return result
 
-def insert_random_mask(batch,data_collator):
+def insert_random_mask(batch,data_collator,seed=42):
+    torch.manual_seed(seed)
     features = [dict(zip(batch, t)) for t in zip(*batch.values())]
     masked_inputs = data_collator(features)
     # Create a new "masked" column for each column in the dataset
@@ -47,7 +49,7 @@ def create_tokenizer(model_checkpoint):
 def tokenize_dataset(dataset,tokenizer):
 
     return dataset.map(
-      lambda examples: tokenize_function(examples, tokenizer), batched=True, remove_columns=["texte","protocole"]
+      lambda examples: tokenize_function(examples, tokenizer), batched=True, remove_columns=dataset.column_names
 )
 
 
@@ -114,3 +116,75 @@ def create_dataloader(dataset,batch_size,collate_fct,shuffle=True):
         batch_size=batch_size,
         collate_fn=collate_fct
     )
+def chunk_and_pad(examples,tokenizer,block_size):
+        all_input_ids = []
+        all_attention_masks = []
+        all_word_ids=[]
+ 
+        for text in examples['texte']:
+            # Tokenize the text
+            tokenized_inputs = tokenizer(text, truncation=False, return_attention_mask=True)
+            input_ids = tokenized_inputs['input_ids']
+            attention_mask = tokenized_inputs['attention_mask']
+            word_ids = tokenized_inputs.word_ids()
+            
+            # Chunk into blocks of `block_size`
+            for i in range(0, len(input_ids), block_size):
+                chunk_input_ids = input_ids[i:min(i + block_size,len(input_ids))]
+                chunk_attention_mask = attention_mask[i:min(i + block_size,len(input_ids))]
+                chunk_word_ids = word_ids[i:min(i + block_size,len(input_ids))]
+                
+                # Pad the last chunk if necessary
+                if len(chunk_input_ids) < block_size:
+                    padding_length = block_size - len(chunk_input_ids)
+                    chunk_input_ids = chunk_input_ids + [tokenizer.pad_token_id] * padding_length
+                    chunk_attention_mask = chunk_attention_mask + [0] * padding_length
+                    chunk_word_ids = chunk_word_ids + [-1] * padding_length
+                
+                all_input_ids.append(chunk_input_ids)
+                all_attention_masks.append(chunk_attention_mask)
+                all_word_ids.append(chunk_word_ids)
+                
+        labels =all_input_ids.copy()
+    
+        
+        return {'input_ids': all_input_ids, 'attention_mask': all_attention_masks,"labels":labels,"word_ids":all_word_ids}
+    
+    
+def insert_special_masking_bis(batch, i,tokenizer):
+    word_ids = batch["word_ids"]
+    masked_input_id = batch["input_ids"].copy()
+    attention_mask = batch["attention_mask"].copy()
+    
+    labels = np.full_like(masked_input_id, -100)
+    
+    for z, seq in enumerate(masked_input_id):
+        if seq[i] == tokenizer.pad_token_id or seq[i] == tokenizer.sep_token_id:
+            continue
+        
+        labels[z, i] = seq[i]
+        masked_input_id[z][i] = tokenizer.mask_token_id
+        future_token = [j for j, _ in enumerate(word_ids[z]) if word_ids[z][j] == word_ids[z][i] and j > i]
+        
+        for j in future_token:
+            labels[z][j] = batch["input_ids"][z][j]
+            masked_input_id[z][j] = tokenizer.mask_token_id
+    
+    return {
+        "input_ids": masked_input_id,
+        "attention_mask": attention_mask,
+        "labels": labels
+    }
+    
+    
+def get_context_with_mask(example, token_id,tokenizer):
+    masked_positions = [idx for idx, token in enumerate(example['input_ids']) if token == tokenizer.mask_token_id]
+    print(masked_positions)
+    for i in range(len(masked_positions)):
+        if example['labels'][masked_positions[i]] == token_id:
+            start_position = max(0, masked_positions[i-1]) if i > 0 else 0
+            end_position = min(len(example["input_ids"]), masked_positions[i+1]) if i < len(masked_positions) - 1 else len(example["input_ids"])
+            context = example["input_ids"][start_position + 1:end_position]
+            return {'input_ids': context, 'attention_mask' : example['attention_mask'][start_position + 1:end_position],'labels': example['labels'][start_position + 1:end_position]}
+    return {}# If no matching mask is found
+  

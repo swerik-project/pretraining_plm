@@ -3,10 +3,12 @@ from transformers import TrainingArguments
 import math
 import torch
 import subprocess
-
+import preprocessing
+from transformers import default_data_collator
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 
 
@@ -76,8 +78,35 @@ def evaluation_task(model,dataloader,model_filename):
     accuracy = correct_predictions / total_predictions
     print("Accuracy:", accuracy)
 
+def l2R_MLM_Crossentropy(model,dataset,tokenizer,max_length=128,batch_size=64):
+    pll = 0
+    batch_size=batch_size
+    for i in  range(max_length):
 
-def party_gender_detection(model_filename) :
+        losses =[]
+        eval_dataset_log =dataset.map(
+            lambda examples: preprocessing.insert_special_masking_bis(examples,i,tokenizer),
+            batched=True,
+            remove_columns = dataset.column_names
+        )
+        eval_dataloader = preprocessing.create_dataloader(eval_dataset_log,batch_size,default_data_collator)
+        for step, batch in enumerate(eval_dataloader):
+            batch={key: value.to(device) for key, value in batch.items()}
+            with torch.no_grad():
+                output=model(**batch)
+            loss=output.loss
+            losses.append(loss.repeat(eval_dataloader.batch_size))
+
+        losses=torch.cat(losses)
+        pll +=torch.mean(losses)
+
+   
+    print(f"Pseudo log perplexity hugging face: {pll}")
+    print(f"Average pseudo log perplexity hugging_face: {pll/max_length}")
+    return pll, pll/max_length
+    
+    
+def party_gender_detection(model_filename,data_train) :
 
     print("Party classification")
  
@@ -85,13 +114,17 @@ def party_gender_detection(model_filename) :
     command = [
     "python3",
     "train_binary_bert.py",
-    "--model_filename",
+    "--model_filename1",
     "trained_party_classification",
+    "--model_filename2",
+    "trained_hugging_face_party_classification"+ model_filename[-6:],
+    "--base_model2",
+    model_filename,
     "--data_path",
-    "swerick_subsetdata_party_train.csv",
-    "--label_names",
-    '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
-    #"man","woman"
+    data_train
+    # "--label_names",
+   # '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
+    
 ]
 
     # Exécuter la commande
@@ -103,27 +136,27 @@ def party_gender_detection(model_filename) :
     print("stderr:", stderr.decode())
     
 
-    command = [
-    "python3",
-    "train_binary_bert.py",
-    "--model_filename",
-    "trained_hugging_face_party_classification"+ model_filename[-6:],
-    "--base_model",
-    model_filename,
-    "--data_path",
-    "swerick_subsetdata_party_train.csv",
-    "--label_names",
-    '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
-    #"man","woman"
-]
+#     command = [
+#     "python3",
+#     "train_binary_bert_base.py",
+#     "--model_filename",
+#     "trained_hugging_face_gender_classification"+ model_filename[-6:],
+#     "--base_model",
+#     model_filename,
+#     "--data_path",
+#     data_train
+#    # "--label_names",
+#    # '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
+    
+# ]
 
-    # Exécuter la commande
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
+    # # Exécuter la commande
+    # process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # stdout, stderr = process.communicate()
 
-    # Print the output
-    print("stdout:", stdout.decode())
-    print("stderr:", stderr.decode())
+    # # Print the output
+    # print("stdout:", stdout.decode())
+    # print("stderr:", stderr.decode())
 
     print("comparing")
     command2= [
@@ -132,12 +165,12 @@ def party_gender_detection(model_filename) :
     "--model_filename1",
     "trained_party_classification",
     "--model_filename2",
-    "trained_hugging_face_party_classification" + model_filename[-6:],
+    "trained_hugging_face_party_classification"+ model_filename[-6:],
     "--data_path",
-    "swerick_subsetdata_party_test.csv",
-    "--label_names",
+    "swerick_subsetdata_alignment_test.csv"
+   # "--label_names",
     #"man","woman"
-    '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
+   # '"vänstern"',"Andra kammarens center","Andra kammarens frihandelsparti","Bondeförbundet","Centern (partigrupp 1873-1882)","Centern (partigrupp 1885-1887)","Centerpartiet","Det förenade högerpartiet","Ehrenheimska partiet","Folkpartiet","Folkpartiet (1895–1900)","Friesenska diskussionsklubben","Frihandelsvänliga centern","Frisinnade folkpartiet","Frisinnade försvarsvänner","Frisinnade landsföreningen","Första kammarens konservativa grupp","Första kammarens ministeriella grupp","Första kammarens minoritetsparti","Första kammarens moderata parti","Första kammarens nationella parti","Första kammarens protektionistiska parti","Gamla lantmannapartiet","Högerns riksdagsgrupp","Högerpartiet","Högerpartiet de konservativa","Jordbrukarnas fria grupp","Junkerpartiet","Kilbomspartiet","Kommunistiska partiet","Kristdemokraterna","Lantmanna- och borgarepartiet inom andrakammaren","Lantmannapartiet","Lantmannapartiets filial","Liberala riksdagspartiet","Liberala samlingspartiet","Liberalerna","Medborgerlig samling (1964–1968)","Miljöpartiet","Moderaterna","Nationella framstegspartiet","Ny demokrati","Nya centern (partigrupp 1883-1887)","Nya lantmannapartiet","Nyliberala partiet","Skånska partiet","Socialdemokraterna","Socialdemokratiska vänstergruppen","Socialistiska partiet","Stockholmsbänken","Sverigedemokraterna","Sveriges kommunistiska parti","Vänsterpartiet","borgmästarepartiet","frihandelsvänlig vilde","frisinnad vilde","högervilde","ministeriella partiet","partilös","politisk vilde","vänstervilde"
     ]
     process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -245,6 +278,169 @@ def intro_classifaction(model_filename):
     "trained_hugging_face_intro_classification" + model_filename[-6:],
     "--data_path",
     "swerick_data_intro_test.csv"
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+
+
+
+def party_classifaction_bis(model_filename,data_path_train, data_path_test):
+
+    print("Party alignement classification")
+ 
+    print("training")
+    command = [
+    "python3",
+    "train_binary_bert.py",
+    "--base_model2",
+    model_filename,
+    "--model_filename1",
+    "trained_alignment_classification",
+    "--model_filename2",
+    "trained_hugging_face_party_classification"+model_filename[-6:],
+    "--data_path",
+    data_path_train
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+        
+    
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models.py",
+    "--model_filename1",
+    "trained_alignment_classification",
+    "--model_filename2",
+    "trained_hugging_face_party_classification" + model_filename[-6:],
+    "--data_path",
+    data_path_test
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+def party_classifaction_scratch(model_filename,data_path_train, data_path_test):
+
+    print("Party alignement classification")
+ 
+    print("training")
+    command = [
+    "python3",
+    "train_binary_bert_base.py",
+    "--model_filename",
+    "trained_alignment_classification",
+    "--data_path",
+    data_path_train
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+        
+    command = [
+    "python3",
+    "train_binary_bert_base.py",
+    "--model_filename",
+    "trained_hugging_face_party_classification"+model_filename[-6:],
+    "--base_model",
+    model_filename,
+    "--tokenizer",
+    "/home/laurinemeier/swerick/evaluation/swerick_tokenizer",
+    "--data_path",
+    data_path_train
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models.py",
+    "--model_filename1",
+    "trained_alignment_classification",
+    "--model_filename2",
+    "trained_hugging_face_party_classification" + model_filename[-6:],
+    "--data_path",
+    data_path_test
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+     
+def train_binary_bert(learning_rate,batch_size):
+    print("training")
+    command = [
+    "python3",
+    "train_binary_bert.py",
+    "--base_model2",
+    "/home/laurinemeier/swerick/finetuning_hugging_whitespace_bis-finetuned-imdb/checkpoint-2118250",
+    "--model_filename1",
+    "trained_alignment_classification",
+    "--model_filename2",
+    "trained_hugging_face_party_classification118250",
+    "--data_path",
+    "/home/laurinemeier/swerick/evaluation/swerick_subsetdata_alignment_train_withoutcenter.csv"
+    "--learning_rate",
+    f"{learning_rate:.5e}",
+    "--batch_size",
+    str(batch_size)]
+    
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+    
+def compare_model():
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models.py",
+    "--model_filename1",
+    "trained_alignment_classification_47",
+    "--model_filename2",
+    "trained_alignment_classification_hugging_47",
+    "--data_path",
+    "/home/laurinemeier/swerick/evaluation/swerick_subsetdata_alignment_test_withoutcenter.csv"
     ]
     process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
