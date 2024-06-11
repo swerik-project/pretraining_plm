@@ -114,7 +114,7 @@ def main(args):
     #lambda batch: tokenize(batch, wrapped_tokenizer, args.context_length), batched=True, remove_columns=swerick_dataset["train"].column_names
 #)
     
-    with open("from_scratc_dataset","rb") as f:
+    with open("from_scratc_dataset.pkl","rb") as f:
         tokenized_datasets = pickle.load(f)
 
 
@@ -126,6 +126,9 @@ def main(args):
     logging_steps = len(tokenized_datasets["train"]) // cfg.global_train_batch_size
 
     trainer = preprocessing.create_trainer(model,args.name,cfg.global_train_batch_size,logging_steps,learning_rate=cfg.optimizer.lr,decay=cfg.optimizer.weight_decay,train_dataset=tokenized_datasets["train"],eval_dataset=tokenized_datasets["test"],data_collator=collate_fn,tokenizer=wrapped_tokenizer,num_epochs=args.epochs)
+    trainer.args.lr_scheduler_type = args.lr_type
+    if args.lr_type =='linear':
+        trainer.args.warmup_ratio=0.01 #same as BERT model
     trainer.train(resume_from_checkpoint= args.trainer_checkpoint)
 
 
@@ -139,6 +142,7 @@ if __name__ == "__main__":
     parser.add_argument("--trainer_checkpoint", type=str, default=None, help="Save location for checkpoint of the trainer")
     parser.add_argument("--name", type=str, default="scratch_pretraining", help="repository name")
     parser.add_argument("--context_length", type=int, default=128)
+    parser.add_argument("--lr_type", type=int, default='linear')
     parser.add_argument("--mlm", type=int, default=0.3)
     parser.add_argument("--epochs", type=int, default=100)
     args = parser.parse_args()

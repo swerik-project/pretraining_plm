@@ -450,3 +450,123 @@ def compare_model():
     # Print the output
     print("stdout:", stdout.decode())
     print("stderr:", stderr.decode())
+    
+    
+    
+    
+    
+def reform_classification(model_filename,data_path_train, data_path_test):
+
+    print("classification classification")
+ 
+    print("training")
+    command = [
+    "python3",
+    "train_binary_bert.py",
+    "--base_model2",
+    model_filename,
+    "--model_filename1",
+    "trained_reform_classification",
+    "--model_filename2",
+    "trained_hugging_face_reform_classification"+model_filename[-6:],
+    "--data_path",
+    data_path_train
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+        
+    
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models.py",
+    "--model_filename1",
+    "trained_reform_classification",
+    "--model_filename2",
+    "trained_hugging_face_reform_classification" + model_filename[-6:],
+    "--data_path",
+    data_path_test
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+    
+    
+def reform_scratch_classfication(model_filename,data_path_train, data_path_test,tokenizer):
+
+    print("Party alignement classification")
+ 
+    print("training")
+    command = [
+    "python3",
+    "train_binary_bert_base.py",
+    "--model_filename",
+    "trained_reform_classification",
+    "--data_path",
+    data_path_train
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+        
+    command = [
+    "python3",
+    "train_binary_bert_base.py",
+    "--model_filename",
+    "trained_hugging_face_reform_classification"+model_filename[-6:],
+    "--base_model",
+    model_filename,
+    "--tokenizer",
+    tokenizer,
+    "--data_path",
+    data_path_train
+]
+
+    # Exécuter la commande
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
+    
+    print("comparing")
+    command2= [
+    "python3",
+    "compare_models.py",
+    "--model_filename1",
+    "trained_reform_classification",
+    "--model_filename2",
+    "trained_hugging_face_reform_classification" + model_filename[-6:],
+    "--tokenizer2",
+    tokenizer,
+    "--data_path",
+    data_path_test
+    ]
+    process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Wait for the process to finish and get the output
+    stdout, stderr = process.communicate()
+
+    # Print the output
+    print("stdout:", stdout.decode())
+    print("stderr:", stderr.decode())
