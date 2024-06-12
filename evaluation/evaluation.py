@@ -338,7 +338,7 @@ def party_classifaction_bis(model_filename,data_path_train, data_path_test):
     print("stdout:", stdout.decode())
     print("stderr:", stderr.decode())
     
-def party_classifaction_scratch(model_filename,data_path_train, data_path_test):
+def party_classifaction_scratch(model_filename,model_filename1,model_filename2,data_path_train, data_path_test):
 
     print("Party alignement classification")
  
@@ -347,7 +347,7 @@ def party_classifaction_scratch(model_filename,data_path_train, data_path_test):
     "python3",
     "train_binary_bert_base.py",
     "--model_filename",
-    "trained_alignment_classification",
+    model_filename1,
     "--data_path",
     data_path_train
 ]
@@ -365,7 +365,7 @@ def party_classifaction_scratch(model_filename,data_path_train, data_path_test):
     "python3",
     "train_binary_bert_base.py",
     "--model_filename",
-    "trained_hugging_face_party_classification"+model_filename[-6:],
+    model_filename2+model_filename[-6:],
     "--base_model",
     model_filename,
     "--tokenizer",
@@ -387,9 +387,9 @@ def party_classifaction_scratch(model_filename,data_path_train, data_path_test):
     "python3",
     "compare_models.py",
     "--model_filename1",
-    "trained_alignment_classification",
+    model_filename1,
     "--model_filename2",
-    "trained_hugging_face_party_classification" + model_filename[-6:],
+    model_filename2 + model_filename[-6:],
     "--data_path",
     data_path_test
     ]
