@@ -182,7 +182,7 @@ def party_gender_detection(model_filename,data_train) :
     print("stderr:", stderr.decode())
 
 
-def regression_year(model_filename,data_path):
+def regression_year(model_filename,data_path_train, tokenizer,data_path_test="evaluation/swerick_subsetdata_date_test.csv"):
     print("Year regression")
 
     print("training")
@@ -191,10 +191,12 @@ def regression_year(model_filename,data_path):
     "train_regression.py",
     "--base_model2",
     model_filename,
+    "--tokenizer2",
+    tokenizer,
     "--model_filename2",
     "trained/regression_date"+model_filename[-6:],
     "--data_path",
-    data_path
+    data_path_train
 
 ]
 
@@ -214,7 +216,7 @@ def regression_year(model_filename,data_path):
     "--model_filename2",
     "trained/regression_date"+model_filename[-6:],
     "--data_path",
-    "swerick_subsetdata_date_test.csv"
+    data_path_test
     ]
     process = subprocess.Popen(command2, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -338,7 +340,7 @@ def party_classifaction_bis(model_filename,data_path_train, data_path_test):
     print("stdout:", stdout.decode())
     print("stderr:", stderr.decode())
     
-def party_classifaction_scratch(model_filename,model_filename1,model_filename2,data_path_train, data_path_test):
+def party_classifaction_scratch(model_filename,model_filename1,model_filename2,data_path_train, data_path_test,tokenizer):
 
     print("Party alignement classification")
  
@@ -369,7 +371,7 @@ def party_classifaction_scratch(model_filename,model_filename1,model_filename2,d
     "--base_model",
     model_filename,
     "--tokenizer",
-    "/home/laurinemeier/swerick/evaluation/swerick_tokenizer",
+    tokenizer,
     "--data_path",
     data_path_train
 ]
@@ -388,6 +390,8 @@ def party_classifaction_scratch(model_filename,model_filename1,model_filename2,d
     "compare_models.py",
     "--model_filename1",
     model_filename1,
+    "--tokenizer2",
+    tokenizer,
     "--model_filename2",
     model_filename2 + model_filename[-6:],
     "--data_path",
@@ -570,3 +574,7 @@ def reform_scratch_classfication(model_filename,data_path_train, data_path_test,
     # Print the output
     print("stdout:", stdout.decode())
     print("stderr:", stderr.decode())
+    
+    
+    
+    

@@ -9,6 +9,7 @@ import logging
 import torch
 import os
 from bidict import bidict
+import transformers
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,39 +86,50 @@ def main(args):
         num_labels=1,
     ).to(args.device)
 
+    config = transformers.BertConfig.from_pretrained( args.model_filename2, num_labels=1)
     model2 = AutoModelForSequenceClassification.from_pretrained(
         args.model_filename2,
-        num_labels=1).to(args.device)
+        config=config,
+        trust_remote_code=True).to(args.device)
     LOGGER.info("Load and tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_filename1)
+    tokenizer1 = AutoTokenizer.from_pretrained(args.model_filename1)
+    tokenizer2=AutoTokenizer.from_pretrained(args.model_filename2)
 
     LOGGER.info("Preprocess datasets...")
-    input_ids, attention_masks, labels = encode(df, tokenizer)
+    input_ids1, attention_masks1, labels1 = encode(df, tokenizer1)
+    input_ids2, attention_masks2, labels2 = encode(df, tokenizer2)
 
-    LOGGER.info(f"Labels: {labels}")
+    LOGGER.info(f"Labels: {labels1}")
 
-    dataset = TensorDataset(input_ids, attention_masks, labels)
+    dataset1 = TensorDataset(input_ids1, attention_masks1, labels1)
+    dataset2= TensorDataset(input_ids2, attention_masks2, labels2)
  
-    test_loader = DataLoader(
-        dataset,
+    test_loader1 = DataLoader(
+        dataset1,
+        shuffle=False,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers
+    )
+    test_loader2 = DataLoader(
+        dataset2,
         shuffle=False,
         batch_size=args.batch_size,
         num_workers=args.num_workers
     )
 
-    print("size test set", len(dataset))
-    loss1,r21 = evaluate(model1, test_loader,args)
-    loss2,r22=evaluate(model2,test_loader,args)
-    print("\nLoss model 1:", loss1 * args.batch_size / len(test_loader))
+    print("size test set", len(dataset1))
+    loss1,r21 = evaluate(model1, test_loader1,args)
+    loss2,r22=evaluate(model2,test_loader2,args)
+    print("\nLoss model 1:", loss1 * args.batch_size / len(test_loader1))
     print("\nR2 model1:",torch.mean(torch.tensor(r21)))
     
     
-    print("\nLoss model 2:", loss2* args.batch_size / len(test_loader))
+    print("\nLoss model 2:", loss2* args.batch_size / len(test_loader2))
     print("\nR2 model2:",torch.mean(torch.tensor(r22)))
 
     with open("comparison_results.txt", "a") as file:
-        print(loss1 * args.batch_size / len(test_loader))
-        file.write(f"{loss1 * args.batch_size / len(test_loader)},{r21},{loss2 * args.batch_size / len(test_loader)},{r22}\n")
+        print(loss1 * args.batch_size / len(test_loader1))
+        file.write(f"{loss1 * args.batch_size / len(test_loader1)},{r21},{loss2 * args.batch_size / len(test_loader2)},{r22}\n")
 
 
 
