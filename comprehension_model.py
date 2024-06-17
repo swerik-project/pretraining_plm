@@ -236,7 +236,7 @@ def change_embedding_word(model1,model2,dataset,tokenizer,number):
     print(f"Top {number} words with the most changed embeddings:")
     for word in top_words:
         print(word)
-    return top_words
+    return top_words,embedding_changes
     
     
 def transfer_attention_weights(source_model, target_model, layer_index,head_index):
