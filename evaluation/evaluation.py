@@ -509,7 +509,7 @@ def reform_classification(model_filename,data_path_train, data_path_test):
     
     
     
-def reform_scratch_classfication(model_filename,data_path_train, data_path_test,tokenizer):
+def reform_scratch_classfication(model_filename,base_model1,base_model2,data_path_train, data_path_test,tokenizer1="KBLab/bert-base-swedish-cased",tokenizer2="KBLab/bert-base-swedish-cased"):
 
     print("Party alignement classification")
  
@@ -518,7 +518,11 @@ def reform_scratch_classfication(model_filename,data_path_train, data_path_test,
     "python3",
     "train_binary_bert_base.py",
     "--model_filename",
-    "trained_reform_classification",
+    model_filename + base_model1[-6],
+    "--base_model",
+    base_model1,
+    "--tokenizer",
+    tokenizer1,
     "--data_path",
     data_path_train
 ]
@@ -536,11 +540,11 @@ def reform_scratch_classfication(model_filename,data_path_train, data_path_test,
     "python3",
     "train_binary_bert_base.py",
     "--model_filename",
-    "trained_hugging_face_reform_classification"+model_filename[-6:],
+    model_filename+base_model2[-6:],
     "--base_model",
-    model_filename,
+    base_model2,
     "--tokenizer",
-    tokenizer,
+    tokenizer2,
     "--data_path",
     data_path_train
 ]
@@ -558,11 +562,13 @@ def reform_scratch_classfication(model_filename,data_path_train, data_path_test,
     "python3",
     "compare_models.py",
     "--model_filename1",
-    "trained_reform_classification",
+    model_filename + base_model1[-6],
     "--model_filename2",
-    "trained_hugging_face_reform_classification" + model_filename[-6:],
+    model_filename +base_model2[-6:],
+    "--tokenizer1",
+    tokenizer1,
     "--tokenizer2",
-    tokenizer,
+    tokenizer2,
     "--data_path",
     data_path_test
     ]
