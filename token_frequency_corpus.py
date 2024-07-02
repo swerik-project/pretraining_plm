@@ -80,22 +80,27 @@ def dfreq(idf, N):
     return (1+N) / np.exp(idf - 1) - 1
 
 
-def token_list(args):
-    data_files = {"train": "swerick_data_random_train.pkl", "test": "swerick_data_random_test.pkl"}
-    swerick_dataset = load_dataset("pandas",data_files=data_files)
+def main(args):
+    with open("Riksdag.txt", 'r') as file:
+        rixvox = [line.strip() for line in file]
+    print("government")
+    with open("wiki.txt", 'r') as file:
+        wiki= [line.strip() for line in file]
 
-    rixvox = load_dataset("KBLab/rixvox", split="train", cache_dir="data_rixvox")
-    wiki = load_dataset("wikipedia", language="sv")
-    news= load_dataset("parquet", data_files=get_files_for_lang_and_years(['sv']), num_proc=4)
-    config = 'sv_all'  # {language}_{type}
-    legal = load_dataset('joelniklaus/Multi_Legal_Pile', config, split='train', streaming=True)
-    
-    def get_text_from_streaming_dataset(dataset):
-        return [example['text'] for example in dataset]
-
-    docs = rixvox['text'] + wiki['text'] + news['text'] + get_text_from_streaming_dataset(legal)
-
-
+    print("wiki")
+    with open("newspaper.txt", 'r') as file:
+        news = [line.strip() for line in file]
+    print("new")
+    with open("legal.txt", 'r') as file:
+        legal = [line.strip() for line in file]
+    print("legal")
+   
+    with open("social_media_corpus.txt", 'r') as file:
+        social= [line.strip() for line in file]
+        
+    docs= rixvox + news + legal + wiki + social
+    docs=docs[:100]
+    print(f"Total texts: {len(docs)}")
 
     nlp = spacy.load("sv_core_news_sm", exclude=['parser', 'ner'])
     print("Tokenizing...")
@@ -115,40 +120,14 @@ def token_list(args):
     tokens_dfreqs = {tok:dfreq for tok, dfreq in zip(tokens_by_df,dfreqs_sorted)}
     tokens_pct_list = [int(round(dfreq/length*100,2)) for token,dfreq in tokens_dfreqs.items()]
     
-    with open('tokens_pct_list.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    with open('tokens_pct_list_KBBERT.csv', 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Token', 'Document Frequency Percentage'])
         for token, pct in zip(tokens_dfreqs.keys(), tokens_pct_list):
             writer.writerow([token, pct])
             
             
-def main(args):
-    chunk_size = args.chunk_size
-    batch_size = args.batch_size
-    num_epochs= args.epochs
-    model_name = args.name
-    model_checkpoint = args.model_filename
-    model = preprocessing.create_model_MLM(model_checkpoint)
-    tokenizer =preprocessing.create_tokenizer(args.tokenizer)
-    model.resize_token_embeddings(len(tokenizer)) 
-
-    #data_files = {"train": "swerick_data_random_train.pkl", "test": "swerick_data_random_test.pkl"}
-    #swerick_dataset = load_dataset("pandas",data_files=data_files)
-    #tokenized_datasets =preprocessing.tokenize_dataset(swerick_dataset,tokenizer)
-    #lm_datasets = preprocessing.grouping_dataset(tokenized_datasets,chunk_size)
-
-    with open("lm_dataset_exbert_60.pkl","rb") as fichier:
-        lm_datasets=pickle.load(fichier)
-    print(lm_datasets)
-    #.select(range(5000))
-    data_collator = preprocessing.data_collector_masking(tokenizer,0.15)
-    logging_steps = len(lm_datasets["train"]) // batch_size
-    
-    
-    trainer = preprocessing.create_trainer(model,model_name,batch_size,logging_steps,train_dataset=lm_datasets["train"],eval_dataset=lm_datasets["test"],data_collator=data_collator,tokenizer=tokenizer,num_epochs=num_epochs)
-    trainer.train(resume_from_checkpoint= args.checkpoint_trainer)
-        
-    
+            
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model_filename", type=str, default="KBLab/bert-base-swedish-cased", help="Save location for the model")
@@ -162,5 +141,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-    
-
