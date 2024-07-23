@@ -1,3 +1,6 @@
+
+# python file to have the frequency of token in the corpus and to calculate whihc tokens should be contained in Exbert tokenizer
+
 import spacy
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
